@@ -102,7 +102,14 @@ uv run agent-evaluation "What is the weather and temperature in Tokyo in fahrenh
 
 | Environment Variable | Default | Description |
 | :--- | :--- | :--- |
+| `LLM_BASE_URL` | `http://localhost:8080/v1` | OpenAI-compatible base URL for the agent LLM |
+| `LLM_MODEL` | `local-model` | Model identifier sent to the LLM server |
+| `LLM_API_KEY` | `not_needed` | API key for the agent LLM server |
+| `EVAL_JUDGE_BASE_URL` | *(falls back to `LLM_BASE_URL`)* | OpenAI-compatible base URL for LLM-as-a-Judge evals |
+| `EVAL_JUDGE_MODEL` | *(falls back to `LLM_MODEL`)* | Model name for LLM-as-a-Judge evals |
+| `EVAL_JUDGE_API_KEY` | *(falls back to `LLM_API_KEY`)* | API key for LLM-as-a-Judge evals |
 | `PHOENIX_ENABLED` | `true` | Set to `false` to disable OpenTelemetry tracing |
+| `PHOENIX_BASE_URL` | `http://localhost:6006` | Base URL for Arize Phoenix Experiments API |
 | `PHOENIX_COLLECTOR_ENDPOINT` | `http://localhost:6006/v1/traces` | OTLP HTTP endpoint for Phoenix |
 | `PHOENIX_API_KEY` | *(unset)* | API key from Phoenix **Settings → API Keys** (required if Phoenix auth is enabled) |
 
@@ -111,6 +118,48 @@ To run without telemetry (for example, when Phoenix is not running):
 ```bash
 PHOENIX_ENABLED=false uv run agent-evaluation "Weather in Berlin?"
 ```
+
+## Agentic Flow Evaluations
+
+Evaluation datasets, deterministic trajectory evaluators (`agentevals`), LLM-as-a-Judge rubrics (`arize-phoenix-evals`), and Arize Phoenix Experiments live under `evals/` and `tests/`.
+
+For a full technical walkthrough of the evaluation architecture, custom YAML schema, `pytest` flags, LLM-as-a-Judge setup, and Arize Phoenix UI guide, see [docs/EVALUATIONS.md](docs/EVALUATIONS.md).
+
+### Install evaluation dependencies
+
+```bash
+uv sync --group eval
+```
+
+### 1. Run offline framework unit tests (no LLM required)
+
+```bash
+uv run pytest
+```
+
+### 2. Run end-to-end agentic flow evals (requires `llama-server`)
+
+Uses `FakeWeatherClient` (no external Open-Meteo network calls) to verify single-turn, multi-turn, error-recovery, and scope-adherence trajectories defined in `evals/datasets/weather_flows.yaml`:
+
+```bash
+uv run pytest tests/test_agentic_flows.py --run-live-agent
+```
+
+To also run LLM-as-a-Judge rubric checks (trajectory quality + tone/formatting):
+
+```bash
+uv run pytest tests/test_agentic_flows.py --run-live-agent --run-judge
+```
+
+### 3. Run as a tracked Arize Phoenix Experiment
+
+With `llama-server` and Arize Phoenix running locally:
+
+```bash
+uv run python -m evals.run_phoenix_experiment --experiment-name weather-v1
+```
+
+Pass `--with-judge` to include LLM-as-a-Judge scores, or `--dry-run 2` to test on the first 2 examples before uploading.
 
 ## Swapping the Weather Provider
 

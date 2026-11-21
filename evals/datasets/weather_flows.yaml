@@ -1,0 +1,206 @@
+# Golden single-turn and multi-turn agentic flow evaluation scenarios
+# Derived from AGENTS.md and skills/weather/SKILL.md
+
+cases:
+  - id: madrid_happy_path_default_celsius
+    description: Standard weather query defaults to Celsius and calls both weather tools.
+    category: happy_path
+    turns:
+      - "What is the weather like in Madrid?"
+    expected_tool_calls:
+      - name: get_weather
+        args: { city: "Madrid" }
+      - name: get_temperature
+        args: { city: "Madrid", unit: "celsius" }
+    trajectory_match_mode: unordered
+    max_tool_calls: 4
+    grounded_any_of:
+      - ["14°C", "14 °C", "14.0°C", "14.0 °C"]
+      - ["Madrid"]
+      - ["clear", "sunny"]
+    rubric_criteria: >
+      The agent must fetch both current weather conditions and temperature in Celsius
+      for Madrid, report 14°C and clear sky accurately, and present the answer in a
+      friendly, scannable format without dumping raw tool strings.
+
+  - id: tokyo_explicit_fahrenheit
+    description: Explicit Fahrenheit unit is normalized and passed to get_temperature.
+    category: unit_normalization
+    turns:
+      - "What is the weather and temperature in Tokyo in F?"
+    expected_tool_calls:
+      - name: get_weather
+        args: { city: "Tokyo" }
+      - name: get_temperature
+        args: { city: "Tokyo", unit: "fahrenheit" }
+    trajectory_match_mode: unordered
+    max_tool_calls: 4
+    grounded_any_of:
+      - ["68°F", "68 °F", "68.0°F", "68.0 °F"]
+      - ["Tokyo"]
+      - ["partly cloudy", "cloudy"]
+    rubric_criteria: >
+      The agent must normalize 'F' to 'fahrenheit', call get_weather and get_temperature
+      for Tokyo, and report 68°F and partly cloudy conditions clearly.
+
+  - id: multi_city_comparison
+    description: Comparing two cities fetches data for both without looping.
+    category: multi_city
+    turns:
+      - "Compare the current weather and temperature in Madrid and Berlin."
+    expected_tool_calls:
+      - name: get_weather
+        args: { city: "Madrid" }
+      - name: get_temperature
+        args: { city: "Madrid", unit: "celsius" }
+      - name: get_weather
+        args: { city: "Berlin" }
+      - name: get_temperature
+        args: { city: "Berlin", unit: "celsius" }
+    trajectory_match_mode: unordered
+    max_tool_calls: 6
+    grounded_any_of:
+      - ["Madrid"]
+      - ["Berlin"]
+      - ["14"]
+      - ["8"]
+    rubric_criteria: >
+      The agent must fetch conditions and Celsius temperatures for both Madrid (14°C, clear sky)
+      and Berlin (8°C, overcast), then present a clear comparison without redundant tool calls.
+
+  - id: vague_location_no_tools
+    description: Vague location must trigger clarification with zero weather tool calls.
+    category: input_validation
+    turns:
+      - "What's the weather like outside right now?"
+    expected_tool_calls: []
+    trajectory_match_mode: strict
+    forbidden_tools:
+      - get_weather
+      - get_temperature
+    max_tool_calls: 0
+    grounded_any_of:
+      - ["city", "location", "where"]
+    rubric_criteria: >
+      Because the user did not name a specific city, the agent must NOT call get_weather
+      or get_temperature, and must politely ask which city they want to check.
+
+  - id: multi_turn_clarification_flow
+    description: Turn 1 asks for city with no tool calls; Turn 2 fetches weather for London.
+    category: multi_turn
+    turns:
+      - "Is it raining here?"
+      - "Sorry, I meant London."
+    turn_assertions:
+      - turn_index: 0
+        forbidden_tools:
+          - get_weather
+          - get_temperature
+      - turn_index: 1
+        required_tools:
+          - get_weather
+    expected_tool_calls:
+      - name: get_weather
+        args: { city: "London" }
+    trajectory_match_mode: superset
+    max_tool_calls: 4
+    grounded_any_of:
+      - ["London"]
+      - ["rain"]
+    rubric_criteria: >
+      On turn 1, the agent must not call any weather tool and must ask for a city.
+      On turn 2, after the user provides London, the agent must call get_weather for London
+      and accurately report moderate rain.
+
+  - id: multi_turn_unit_followup
+    description: Turn 1 checks Madrid in Celsius; Turn 2 retains Madrid context for Fahrenheit.
+    category: multi_turn
+    turns:
+      - "What's the weather in Madrid?"
+      - "What is the temperature there in Fahrenheit?"
+    turn_assertions:
+      - turn_index: 0
+        required_tools:
+          - get_weather
+      - turn_index: 1
+        required_tools:
+          - get_temperature
+    expected_tool_calls:
+      - name: get_weather
+        args: { city: "Madrid" }
+      - name: get_temperature
+        args: { city: "Madrid", unit: "fahrenheit" }
+    trajectory_match_mode: superset
+    max_tool_calls: 5
+    grounded_any_of:
+      - ["57.2"]
+      - ["°F", "Fahrenheit"]
+    rubric_criteria: >
+      On turn 1, the agent checks Madrid in Celsius. On turn 2, the agent resolves 'there'
+      to Madrid from conversation history, calls get_temperature(city='Madrid', unit='fahrenheit'),
+      and reports 57.2°F.
+
+  - id: unknown_city_error_recovery
+    description: Unknown city tool error is handled honestly without hallucinating weather.
+    category: error_recovery
+    turns:
+      - "What is the weather in Atlantis?"
+    expected_tool_calls:
+      - name: get_weather
+        args: { city: "Atlantis" }
+    trajectory_match_mode: superset
+    max_tool_calls: 3
+    grounded_any_of:
+      - ["Atlantis"]
+      - ["not found", "couldn't find", "could not find", "unable", "sorry", "don't have", "no location"]
+    rubric_criteria: >
+      When the weather tool returns an error that Atlantis could not be found, the agent must
+      not loop endlessly or invent weather conditions. It should plainly inform the user that
+      Atlantis could not be found.
+
+  - id: service_outage_error_recovery
+    description: Simulated API outage is reported transparently without fabricating data.
+    category: error_recovery
+    fake_client:
+      fail_mode: service_outage
+    turns:
+      - "What is the weather in Paris?"
+    expected_tool_calls:
+      - name: get_weather
+        args: { city: "Paris" }
+    trajectory_match_mode: superset
+    max_tool_calls: 3
+    grounded_any_of:
+      - ["sorry", "unable", "unavailable", "couldn't", "could not", "error", "try again"]
+    rubric_criteria: >
+      When the weather service is unavailable, the agent must apologize briefly and inform the
+      user that weather data could not be retrieved right now, without guessing or fabricating
+      any temperature or conditions.
+
+  - id: unsupported_unit_kelvin
+    description: Unsupported unit (Kelvin) is handled per SKILL.md without crashing.
+    category: edge_case
+    turns:
+      - "What is the temperature in Berlin in Kelvin?"
+    expected_tool_calls: []
+    trajectory_match_mode: superset
+    max_tool_calls: 3
+    grounded_any_of:
+      - ["Celsius", "Fahrenheit", "celsius", "fahrenheit"]
+    rubric_criteria: >
+      The agent must recognize that Kelvin is not supported, explain that it supports Celsius
+      and Fahrenheit, and either ask which the user prefers or provide the temperature in Celsius (8°C).
+
+  - id: out_of_scope_forecast
+    description: Multi-day forecast request clearly states current-conditions-only scope.
+    category: scope_adherence
+    turns:
+      - "Give me the 7-day weather forecast for Madrid."
+    expected_tool_calls: []
+    trajectory_match_mode: superset
+    max_tool_calls: 3
+    grounded_any_of:
+      - ["current", "only", "forecast"]
+    rubric_criteria: >
+      The agent must clearly inform the user that it can only check current weather conditions
+      and temperatures, not multi-day forecasts, and must never fabricate a 7-day forecast.

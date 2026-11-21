@@ -21,3 +21,18 @@ agent-evaluation = "agent_evaluation:main"
 [build-system]
 requires = ["uv_build>=0.13.9,<0.14.0"]
 build-backend = "uv_build"
+
+[dependency-groups]
+eval = [
+    "agentevals>=0.0.9",
+    "arize-phoenix-client>=3.7.0",
+    "arize-phoenix-evals>=3.10.0",
+    "pytest>=9.2.0",
+    "pytest-asyncio>=1.5.0",
+    "pyyaml>=6.0.3",
+]
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["tests"]
+asyncio_default_fixture_loop_scope = "function"
