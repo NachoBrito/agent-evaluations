@@ -20,7 +20,7 @@ description: Mandatory workflow for all weather, forecast, conditions, and tempe
 
 Once the input is valid, use the available tools instead of guessing or relying on prior knowledge:
 
-1. **Always call both `get_weather` and `get_temperature`** for general weather queries (e.g., *"What is the weather like in Madrid?"*) so the user gets both current conditions and temperature:
+1. **Always call both `get_weather` and `get_temperature` together in parallel** for general weather queries (e.g., *"What is the weather like in Madrid?"*). Remember that `get_weather` only returns sky/humidity/wind and does **not** return temperature:
 
 ```
 get_weather(city="Madrid")
