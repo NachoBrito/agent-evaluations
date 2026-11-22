@@ -153,7 +153,7 @@ cases:
     max_tool_calls: 3
     grounded_any_of:
       - ["Atlantis"]
-      - ["not found", "couldn't find", "could not find", "unable", "sorry", "don't have", "no location", "does not match", "doesn't match", "non-existent", "does not exist", "doesn't exist", "not a valid", "fictional", "invalid"]
+      - ["not found", "not be found", "couldn't find", "could not find", "could not be found", "unable", "sorry", "don't have", "no location", "does not match", "doesn't match", "non-existent", "does not exist", "doesn't exist", "not a valid", "fictional", "invalid"]
     forbidden_substrings:
       - "°C"
       - "°F"
