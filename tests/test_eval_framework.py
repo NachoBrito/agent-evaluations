@@ -287,3 +287,58 @@ def test_format_conversation_includes_all_turns():
     assert "Turn 1 Assistant: Which city would you like me to check?" in formatted
     assert "Turn 2 User: Sorry, I meant London." in formatted
     assert "Turn 2 Assistant: London currently has moderate rain." in formatted
+
+
+def test_format_trajectory_groups_by_user_turn():
+    import json
+
+    from evals.evaluators.llm_judge import _format_trajectory
+
+    run = _make_run(
+        "multi_turn_unit_followup",
+        [
+            (
+                "What's the weather in Madrid?",
+                [
+                    HumanMessage(content="What's the weather in Madrid?"),
+                    AIMessage(
+                        content="",
+                        tool_calls=[{"name": "get_weather", "args": {"city": "Madrid"}, "id": "c1"}],
+                    ),
+                    ToolMessage(content="Clear sky.", name="get_weather", tool_call_id="c1"),
+                    AIMessage(
+                        content="",
+                        tool_calls=[
+                            {"name": "get_temperature", "args": {"city": "Madrid", "unit": "celsius"}, "id": "c2"}
+                        ],
+                    ),
+                    ToolMessage(content="14.0°C.", name="get_temperature", tool_call_id="c2"),
+                    AIMessage(content="Madrid is clear and 14°C."),
+                ],
+            ),
+            (
+                "What is the temperature there in Fahrenheit?",
+                [
+                    HumanMessage(content="What is the temperature there in Fahrenheit?"),
+                    AIMessage(
+                        content="",
+                        tool_calls=[
+                            {"name": "get_temperature", "args": {"city": "Madrid", "unit": "fahrenheit"}, "id": "c3"}
+                        ],
+                    ),
+                    ToolMessage(content="57.2°F.", name="get_temperature", tool_call_id="c3"),
+                    AIMessage(content="57.2°F."),
+                ],
+            ),
+        ],
+    )
+    parsed = json.loads(_format_trajectory(run))
+    assert len(parsed) == 2
+    assert parsed[0]["turn"] == 1
+    assert parsed[1]["turn"] == 2
+    turn1_tools = [
+        tc["function"]["name"]
+        for m in parsed[0]["messages"]
+        for tc in m.get("tool_calls", [])
+    ]
+    assert turn1_tools == ["get_weather", "get_temperature"]

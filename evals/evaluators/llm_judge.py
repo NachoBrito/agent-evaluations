@@ -10,7 +10,7 @@ from phoenix.evals import LLM, create_classifier
 
 from agent_evaluation.weather_agent import DEFAULT_LLM_BASE_URL, DEFAULT_LLM_MODEL
 from evals.evaluators.deterministic import EvalOutcome
-from evals.harness import FlowRunResult
+from evals.harness import FlowRunResult, to_openai_domain_trajectory
 
 TRAJECTORY_QUALITY_TEMPLATE = """You are an expert evaluator of AI weather agents.
 Review the multi-turn conversation and tool-call trajectory below, and judge whether the
@@ -79,7 +79,17 @@ def build_judge_llm(
 
 
 def _format_trajectory(run: FlowRunResult) -> str:
-    return json.dumps(run.openai_trajectory, indent=2, ensure_ascii=False)
+    if not run.turns or not any(t.new_messages for t in run.turns):
+        return json.dumps(run.openai_trajectory, indent=2, ensure_ascii=False)
+    structured = [
+        {
+            "turn": i,
+            "user_input": turn.user_input,
+            "messages": to_openai_domain_trajectory(turn.new_messages),
+        }
+        for i, turn in enumerate(run.turns, start=1)
+    ]
+    return json.dumps(structured, indent=2, ensure_ascii=False)
 
 
 def _format_conversation(run: FlowRunResult) -> str:
