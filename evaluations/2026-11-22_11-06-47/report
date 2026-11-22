@@ -1,0 +1,53 @@
+============================= test session starts ==============================
+platform linux -- Python 3.14.4, pytest-9.2.0, pluggy-1.7.0
+rootdir: /home/nacho/github/agent-evaluation
+configfile: pyproject.toml
+plugins: langsmith-0.15.1, arize-phoenix-client-3.7.0, asyncio-1.5.0, anyio-4.16.0
+asyncio: mode=Mode.STRICT, debug=False, asyncio_default_fixture_loop_scope=function, asyncio_default_test_loop_scope=function
+collecting ... collecting 10 items                                                            collected 10 items                                                             
+
+tests/test_agentic_flows.py .....F....                                   [100%]
+
+=================================== FAILURES ===================================
+_____________ test_weather_agentic_flow[multi_turn_unit_followup] ______________
+
+case = {'id': 'multi_turn_unit_followup', 'description': 'Turn 1 checks Madrid in Celsius; Turn 2 retains Madrid context for ...tegory': 'multi_turn', 'turns': ["What's the weather in Madrid?", 'What is the temperature there in Fahrenheit?'], ...}
+request = <FixtureRequest for <Coroutine test_weather_agentic_flow[multi_turn_unit_followup]>>
+
+    @pytest.mark.live_agent
+    @pytest.mark.asyncio
+    @pytest.mark.parametrize("case", FLOW_CASES, ids=[c["id"] for c in FLOW_CASES])
+    async def test_weather_agentic_flow(case: dict, request: pytest.FixtureRequest) -> None:
+        run_result = await run_flow_case(case)
+    
+        outcomes = run_deterministic_evaluators(run_result, case)
+        if request.config.getoption("--run-judge"):
+            outcomes.extend(run_llm_judge_evaluators(run_result, case))
+    
+        failures = [f"[{o.name}] {o.reason}" for o in outcomes if not o.passed]
+>       assert not failures, (
+            f"Flow '{case['id']}' failed {len(failures)} check(s):\n"
+            + "\n".join(f"  - {f}" for f in failures)
+            + f"\nFinal response: {run_result.final_response!r}"
+            + f"\nDomain tool calls: {[(c.turn_index, c.name, c.args) for c in run_result.domain_tool_calls]}"
+            + f"\nSkill loaded (SKILL.md): {run_result.skill_loaded}"
+        )
+E       AssertionError: Flow 'multi_turn_unit_followup' failed 3 check(s):
+E           - [trajectory_match] Trajectory mismatch (superset). Expected [('get_weather', {'city': 'Madrid'}), ('get_temperature', {'city': 'Madrid', 'unit': 'fahrenheit'})], got [('get_weather', {'city': 'Madrid'}), ('get_temperature', {'city': 'Madrid', 'unit': 'celsius'})]
+E           - [tool_policy] Turn 1 missed required tool(s): ['get_temperature'] (called: [])
+E           - [trajectory_quality] The agent failed to meet the rubric criteria. On turn 2, the user asked for the temperature in Fahrenheit, but the agent called get_temperature with 'celsius' instead of 'fahrenheit'. The correct response should have converted 14.0°C to Fahrenheit (57.2°F) directly, but the agent's tool call was incorrect. The rubric required the agent to resolve 'there' to Madrid and call get_temperature with Fahrenheit on turn 2.
+E         Final response: 'The temperature in Madrid, Spain is **57.2°F** (feels like 56.0°F). Let me know if you need further details!'
+E         Domain tool calls: [(0, 'get_weather', {'city': 'Madrid'}), (0, 'get_temperature', {'city': 'Madrid', 'unit': 'celsius'})]
+E         Skill loaded (SKILL.md): False
+E       assert not ["[trajectory_match] Trajectory mismatch (superset). Expected [('get_weather', {'city': 'Madrid'}), ('get_temperature'...rrect. The rubric required the agent to resolve 'there' to Madrid and call get_temperature with Fahrenheit on turn 2."]
+
+tests/test_agentic_flows.py:30: AssertionError
+=============================== warnings summary ===============================
+.venv/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:92: 17 warnings
+  /home/nacho/github/agent-evaluation/.venv/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:92: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead
+    if asyncio.iscoroutinefunction(func):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/test_agentic_flows.py::test_weather_agentic_flow[multi_turn_unit_followup]
+============= 1 failed, 9 passed, 17 warnings in 481.70s (0:08:01) =============

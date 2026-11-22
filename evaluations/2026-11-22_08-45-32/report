@@ -1,0 +1,175 @@
+============================= test session starts ==============================
+platform linux -- Python 3.14.4, pytest-9.2.0, pluggy-1.7.0
+rootdir: /home/nacho/github/agent-evaluation
+configfile: pyproject.toml
+plugins: langsmith-0.15.1, arize-phoenix-client-3.7.0, asyncio-1.5.0, anyio-4.16.0
+asyncio: mode=Mode.STRICT, debug=False, asyncio_default_fixture_loop_scope=function, asyncio_default_test_loop_scope=function
+collecting ... collecting 10 items                                                            collected 10 items                                                             
+
+tests/test_agentic_flows.py F...FFF.F.                                   [100%]
+
+=================================== FAILURES ===================================
+_________ test_weather_agentic_flow[madrid_happy_path_default_celsius] _________
+
+case = {'id': 'madrid_happy_path_default_celsius', 'description': 'Standard weather query defaults to Celsius and calls both weather tools.', 'category': 'happy_path', 'turns': ['What is the weather like in Madrid?'], ...}
+request = <FixtureRequest for <Coroutine test_weather_agentic_flow[madrid_happy_path_default_celsius]>>
+
+    @pytest.mark.live_agent
+    @pytest.mark.asyncio
+    @pytest.mark.parametrize("case", FLOW_CASES, ids=[c["id"] for c in FLOW_CASES])
+    async def test_weather_agentic_flow(case: dict, request: pytest.FixtureRequest) -> None:
+        run_result = await run_flow_case(case)
+    
+        outcomes = run_deterministic_evaluators(run_result, case)
+        if request.config.getoption("--run-judge"):
+            outcomes.extend(run_llm_judge_evaluators(run_result, case))
+    
+        failures = [f"[{o.name}] {o.reason}" for o in outcomes if not o.passed]
+>       assert not failures, (
+            f"Flow '{case['id']}' failed {len(failures)} check(s):\n"
+            + "\n".join(f"  - {f}" for f in failures)
+            + f"\nFinal response: {run_result.final_response!r}"
+            + f"\nDomain tool calls: {[(c.turn_index, c.name, c.args) for c in run_result.domain_tool_calls]}"
+        )
+E       AssertionError: Flow 'madrid_happy_path_default_celsius' failed 3 check(s):
+E           - [trajectory_match] Trajectory mismatch (unordered). Expected [('get_weather', {'city': 'Madrid'}), ('get_temperature', {'city': 'Madrid', 'unit': 'celsius'})], got [('get_weather', {'city': 'Madrid'})]
+E           - [groundedness] Expected one of ['14°C', '14 °C', '14.0°C', '14.0 °C'] in final response.
+E           - [trajectory_quality] The agent failed to include the required temperature in Celsius (14°C) and clear sky conditions. The tool response only provided humidity and wind speed, and the agent's reply omitted the temperature. The rubric explicitly required reporting 14°C and clear sky, but the agent's answer did not include the temperature, violating the criteria.
+E         Final response: 'The weather in Madrid, Spain is currently clear with bright skies. The conditions include 45% humidity and a gentle wind speed of 10.5 km/h. This suggests pleasant outdoor conditions with minimal cloud cover and mild wind. Would you like additional details or forecasts for a specific period?'
+E         Domain tool calls: [(0, 'get_weather', {'city': 'Madrid'})]
+E       assert not ["[trajectory_match] Trajectory mismatch (unordered). Expected [('get_weather', {'city': 'Madrid'}), ('get_temperature...equired reporting 14°C and clear sky, but the agent's answer did not include the temperature, violating the criteria."]
+
+tests/test_agentic_flows.py:30: AssertionError
+___________ test_weather_agentic_flow[multi_turn_clarification_flow] ___________
+
+case = {'id': 'multi_turn_clarification_flow', 'description': 'Turn 1 asks for city with no tool calls; Turn 2 fetches weather for London.', 'category': 'multi_turn', 'turns': ['Is it raining here?', 'Sorry, I meant London.'], ...}
+request = <FixtureRequest for <Coroutine test_weather_agentic_flow[multi_turn_clarification_flow]>>
+
+    @pytest.mark.live_agent
+    @pytest.mark.asyncio
+    @pytest.mark.parametrize("case", FLOW_CASES, ids=[c["id"] for c in FLOW_CASES])
+    async def test_weather_agentic_flow(case: dict, request: pytest.FixtureRequest) -> None:
+        run_result = await run_flow_case(case)
+    
+        outcomes = run_deterministic_evaluators(run_result, case)
+        if request.config.getoption("--run-judge"):
+            outcomes.extend(run_llm_judge_evaluators(run_result, case))
+    
+        failures = [f"[{o.name}] {o.reason}" for o in outcomes if not o.passed]
+>       assert not failures, (
+            f"Flow '{case['id']}' failed {len(failures)} check(s):\n"
+            + "\n".join(f"  - {f}" for f in failures)
+            + f"\nFinal response: {run_result.final_response!r}"
+            + f"\nDomain tool calls: {[(c.turn_index, c.name, c.args) for c in run_result.domain_tool_calls]}"
+        )
+E       AssertionError: Flow 'multi_turn_clarification_flow' failed 1 check(s):
+E           - [tool_policy] Turn 1 missed required tool(s): ['get_weather'] (called: [])
+E         Final response: 'The weather in London, United Kingdom is currently experiencing **moderate rain** with the following conditions:  \n- Humidity: 85%  \n- Wind speed: 22.0 km/h  \n\nYou may want to carry an umbrella or avoid outdoor activities if possible. Let me know if you need further details!'
+E         Domain tool calls: []
+E       assert not ["[tool_policy] Turn 1 missed required tool(s): ['get_weather'] (called: [])"]
+
+tests/test_agentic_flows.py:30: AssertionError
+_____________ test_weather_agentic_flow[multi_turn_unit_followup] ______________
+
+case = {'id': 'multi_turn_unit_followup', 'description': 'Turn 1 checks Madrid in Celsius; Turn 2 retains Madrid context for ...tegory': 'multi_turn', 'turns': ["What's the weather in Madrid?", 'What is the temperature there in Fahrenheit?'], ...}
+request = <FixtureRequest for <Coroutine test_weather_agentic_flow[multi_turn_unit_followup]>>
+
+    @pytest.mark.live_agent
+    @pytest.mark.asyncio
+    @pytest.mark.parametrize("case", FLOW_CASES, ids=[c["id"] for c in FLOW_CASES])
+    async def test_weather_agentic_flow(case: dict, request: pytest.FixtureRequest) -> None:
+        run_result = await run_flow_case(case)
+    
+        outcomes = run_deterministic_evaluators(run_result, case)
+        if request.config.getoption("--run-judge"):
+            outcomes.extend(run_llm_judge_evaluators(run_result, case))
+    
+        failures = [f"[{o.name}] {o.reason}" for o in outcomes if not o.passed]
+>       assert not failures, (
+            f"Flow '{case['id']}' failed {len(failures)} check(s):\n"
+            + "\n".join(f"  - {f}" for f in failures)
+            + f"\nFinal response: {run_result.final_response!r}"
+            + f"\nDomain tool calls: {[(c.turn_index, c.name, c.args) for c in run_result.domain_tool_calls]}"
+        )
+E       AssertionError: Flow 'multi_turn_unit_followup' failed 4 check(s):
+E           - [trajectory_match] Trajectory mismatch (superset). Expected [('get_weather', {'city': 'Madrid'}), ('get_temperature', {'city': 'Madrid', 'unit': 'fahrenheit'})], got [('get_weather', {'city': 'Madrid'})]
+E           - [tool_policy] Turn 1 missed required tool(s): ['get_temperature'] (called: [])
+E           - [groundedness] Final agent response is empty.
+E           - [trajectory_quality] The agent failed to meet the rubric criteria. On turn 1, the agent should have checked Madrid in Celsius, but instead asked for clarification on the city. The user's question was ambiguous ('there'), but the agent's initial response did not assume Madrid. The rubric requires the agent to explicitly check Madrid in Celsius on turn 1, which was not done. The subsequent turn 2 resolves 'there' to Madrid, but this is a later step, not the required first action.
+E         Final response: ''
+E         Domain tool calls: [(0, 'get_weather', {'city': 'Madrid'})]
+E       assert not ["[trajectory_match] Trajectory mismatch (superset). Expected [('get_weather', {'city': 'Madrid'}), ('get_temperature'... not done. The subsequent turn 2 resolves 'there' to Madrid, but this is a later step, not the required first action."]
+
+tests/test_agentic_flows.py:30: AssertionError
+____________ test_weather_agentic_flow[unknown_city_error_recovery] ____________
+
+case = {'id': 'unknown_city_error_recovery', 'description': 'Unknown city tool error is handled honestly without hallucinating weather.', 'category': 'error_recovery', 'turns': ['What is the weather in Atlantis?'], ...}
+request = <FixtureRequest for <Coroutine test_weather_agentic_flow[unknown_city_error_recovery]>>
+
+    @pytest.mark.live_agent
+    @pytest.mark.asyncio
+    @pytest.mark.parametrize("case", FLOW_CASES, ids=[c["id"] for c in FLOW_CASES])
+    async def test_weather_agentic_flow(case: dict, request: pytest.FixtureRequest) -> None:
+        run_result = await run_flow_case(case)
+    
+        outcomes = run_deterministic_evaluators(run_result, case)
+        if request.config.getoption("--run-judge"):
+            outcomes.extend(run_llm_judge_evaluators(run_result, case))
+    
+        failures = [f"[{o.name}] {o.reason}" for o in outcomes if not o.passed]
+>       assert not failures, (
+            f"Flow '{case['id']}' failed {len(failures)} check(s):\n"
+            + "\n".join(f"  - {f}" for f in failures)
+            + f"\nFinal response: {run_result.final_response!r}"
+            + f"\nDomain tool calls: {[(c.turn_index, c.name, c.args) for c in run_result.domain_tool_calls]}"
+        )
+E       AssertionError: Flow 'unknown_city_error_recovery' failed 1 check(s):
+E           - [groundedness] Expected one of ['not found', "couldn't find", 'could not find', 'unable', 'sorry', "don't have", 'no location'] in final response.
+E         Final response: 'The location "Atlantis" does not match any valid city or region in the weather database. This could be due to a typo, fictional reference, or a non-existent place. Could you clarify if you meant a different city or provide additional context? For example, are you referring to a real location (e.g., "Atlantis, Greece") or a fictional place?'
+E         Domain tool calls: [(0, 'get_weather', {'city': 'Atlantis'})]
+E       assert not ['[groundedness] Expected one of [\'not found\', "couldn\'t find", \'could not find\', \'unable\', \'sorry\', "don\'t have", \'no location\'] in final response.']
+
+tests/test_agentic_flows.py:30: AssertionError
+______________ test_weather_agentic_flow[unsupported_unit_kelvin] ______________
+
+case = {'id': 'unsupported_unit_kelvin', 'description': 'Unsupported unit (Kelvin) is handled per SKILL.md without crashing.', 'category': 'edge_case', 'turns': ['What is the temperature in Berlin in Kelvin?'], ...}
+request = <FixtureRequest for <Coroutine test_weather_agentic_flow[unsupported_unit_kelvin]>>
+
+    @pytest.mark.live_agent
+    @pytest.mark.asyncio
+    @pytest.mark.parametrize("case", FLOW_CASES, ids=[c["id"] for c in FLOW_CASES])
+    async def test_weather_agentic_flow(case: dict, request: pytest.FixtureRequest) -> None:
+        run_result = await run_flow_case(case)
+    
+        outcomes = run_deterministic_evaluators(run_result, case)
+        if request.config.getoption("--run-judge"):
+            outcomes.extend(run_llm_judge_evaluators(run_result, case))
+    
+        failures = [f"[{o.name}] {o.reason}" for o in outcomes if not o.passed]
+>       assert not failures, (
+            f"Flow '{case['id']}' failed {len(failures)} check(s):\n"
+            + "\n".join(f"  - {f}" for f in failures)
+            + f"\nFinal response: {run_result.final_response!r}"
+            + f"\nDomain tool calls: {[(c.turn_index, c.name, c.args) for c in run_result.domain_tool_calls]}"
+        )
+E       AssertionError: Flow 'unsupported_unit_kelvin' failed 2 check(s):
+E           - [groundedness] Expected one of ['Celsius', 'Fahrenheit', 'celsius', 'fahrenheit'] in final response.
+E           - [trajectory_quality] The agent failed to recognize that Kelvin is not a supported unit. Instead of explaining the unit conversion or offering Celsius/Fahrenheit, it converted the provided Celsius temperature to Kelvin. The rubric requires the agent to explicitly acknowledge that Kelvin is not supported and provide Celsius (8°C) or ask for preference between Celsius and Fahrenheit.
+E         Final response: 'The temperature in Berlin is 8.0°C. To convert this to Kelvin, we add 273.15:\n\n$$\nK = °C + 273.15 = 8.0 + 273.15 = 281.15\\ K\n$$\n\n**Answer:** 281.15 K'
+E         Domain tool calls: [(0, 'get_temperature', {'city': 'Berlin', 'unit': 'celsius'})]
+E       assert not ["[groundedness] Expected one of ['Celsius', 'Fahrenheit', 'celsius', 'fahrenheit'] in final response.", '[trajectory_...nowledge that Kelvin is not supported and provide Celsius (8°C) or ask for preference between Celsius and Fahrenheit.']
+
+tests/test_agentic_flows.py:30: AssertionError
+=============================== warnings summary ===============================
+.venv/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:92: 17 warnings
+  /home/nacho/github/agent-evaluation/.venv/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:92: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead
+    if asyncio.iscoroutinefunction(func):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/test_agentic_flows.py::test_weather_agentic_flow[madrid_happy_path_default_celsius]
+FAILED tests/test_agentic_flows.py::test_weather_agentic_flow[multi_turn_clarification_flow]
+FAILED tests/test_agentic_flows.py::test_weather_agentic_flow[multi_turn_unit_followup]
+FAILED tests/test_agentic_flows.py::test_weather_agentic_flow[unknown_city_error_recovery]
+FAILED tests/test_agentic_flows.py::test_weather_agentic_flow[unsupported_unit_kelvin]
+============= 5 failed, 5 passed, 17 warnings in 499.89s (0:08:19) =============

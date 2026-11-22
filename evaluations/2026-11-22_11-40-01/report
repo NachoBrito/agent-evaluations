@@ -1,0 +1,85 @@
+============================= test session starts ==============================
+platform linux -- Python 3.14.4, pytest-9.2.0, pluggy-1.7.0
+rootdir: /home/nacho/github/agent-evaluation
+configfile: pyproject.toml
+plugins: langsmith-0.15.1, arize-phoenix-client-3.7.0, asyncio-1.5.0, anyio-4.16.0
+asyncio: mode=Mode.STRICT, debug=False, asyncio_default_fixture_loop_scope=function, asyncio_default_test_loop_scope=function
+collecting ... collecting 10 items                                                            collected 10 items                                                             
+
+tests/test_agentic_flows.py ......FF..                                   [100%]
+
+=================================== FAILURES ===================================
+____________ test_weather_agentic_flow[unknown_city_error_recovery] ____________
+
+case = {'id': 'unknown_city_error_recovery', 'description': 'Unknown city tool error is handled honestly without hallucinating weather.', 'category': 'error_recovery', 'turns': ['What is the weather in Atlantis?'], ...}
+request = <FixtureRequest for <Coroutine test_weather_agentic_flow[unknown_city_error_recovery]>>
+
+    @pytest.mark.live_agent
+    @pytest.mark.asyncio
+    @pytest.mark.parametrize("case", FLOW_CASES, ids=[c["id"] for c in FLOW_CASES])
+    async def test_weather_agentic_flow(case: dict, request: pytest.FixtureRequest) -> None:
+        run_result = await run_flow_case(case)
+    
+        outcomes = run_deterministic_evaluators(run_result, case)
+        if request.config.getoption("--run-judge"):
+            outcomes.extend(run_llm_judge_evaluators(run_result, case))
+    
+        failures = [f"[{o.name}] {o.reason}" for o in outcomes if not o.passed]
+>       assert not failures, (
+            f"Flow '{case['id']}' failed {len(failures)} check(s):\n"
+            + "\n".join(f"  - {f}" for f in failures)
+            + f"\nFinal response: {run_result.final_response!r}"
+            + f"\nDomain tool calls: {[(c.turn_index, c.name, c.args) for c in run_result.domain_tool_calls]}"
+            + f"\nSkill loaded (SKILL.md): {run_result.skill_loaded}"
+        )
+E       AssertionError: Flow 'unknown_city_error_recovery' failed 1 check(s):
+E           - [groundedness] Expected one of ['not found', 'not be found', "couldn't find", 'could not find', 'could not be found', 'unable', 'sorry', "don't have", 'no location', 'does not match', "doesn't match", 'non-existent', 'does not exist', "doesn't exist", 'not a valid', 'fictional', 'invalid'] in final response.
+E         Final response: 'The location "Atlantis" is not recognized as a valid city for weather information. Please check the city name or try a different location. If you meant a specific real-world city, let me know!'
+E         Domain tool calls: [(0, 'get_weather', {'city': 'Atlantis'})]
+E         Skill loaded (SKILL.md): False
+E       assert not ['[groundedness] Expected one of [\'not found\', \'not be found\', "couldn\'t find", \'could not find\', \'could not b...non-existent\', \'does not exist\', "doesn\'t exist", \'not a valid\', \'fictional\', \'invalid\'] in final response.']
+
+tests/test_agentic_flows.py:30: AssertionError
+___________ test_weather_agentic_flow[service_outage_error_recovery] ___________
+
+case = {'id': 'service_outage_error_recovery', 'description': 'Simulated API outage is reported transparently without fabricating data.', 'category': 'error_recovery', 'fake_client': {'fail_mode': 'service_outage'}, ...}
+request = <FixtureRequest for <Coroutine test_weather_agentic_flow[service_outage_error_recovery]>>
+
+    @pytest.mark.live_agent
+    @pytest.mark.asyncio
+    @pytest.mark.parametrize("case", FLOW_CASES, ids=[c["id"] for c in FLOW_CASES])
+    async def test_weather_agentic_flow(case: dict, request: pytest.FixtureRequest) -> None:
+        run_result = await run_flow_case(case)
+    
+        outcomes = run_deterministic_evaluators(run_result, case)
+        if request.config.getoption("--run-judge"):
+            outcomes.extend(run_llm_judge_evaluators(run_result, case))
+    
+        failures = [f"[{o.name}] {o.reason}" for o in outcomes if not o.passed]
+>       assert not failures, (
+            f"Flow '{case['id']}' failed {len(failures)} check(s):\n"
+            + "\n".join(f"  - {f}" for f in failures)
+            + f"\nFinal response: {run_result.final_response!r}"
+            + f"\nDomain tool calls: {[(c.turn_index, c.name, c.args) for c in run_result.domain_tool_calls]}"
+            + f"\nSkill loaded (SKILL.md): {run_result.skill_loaded}"
+        )
+E       AssertionError: Flow 'service_outage_error_recovery' failed 3 check(s):
+E           - [groundedness] Final agent response is empty.
+E           - [trajectory_quality] The agent did not respond to the user's query with an apology or explanation for the weather service outage. The agent's content was empty, and there was no communication to the user about the error. This violates the rubric criteria, which requires the agent to apologize and inform the user when the weather service is unavailable.
+E           - [response_quality] Final agent response is empty.
+E         Final response: ''
+E         Domain tool calls: [(0, 'get_weather', {'city': 'Paris'})]
+E         Skill loaded (SKILL.md): False
+E       assert not ['[groundedness] Final agent response is empty.', "[trajectory_quality] The agent did not respond to the user's query ...ize and inform the user when the weather service is unavailable.", '[response_quality] Final agent response is empty.']
+
+tests/test_agentic_flows.py:30: AssertionError
+=============================== warnings summary ===============================
+.venv/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:92: 17 warnings
+  /home/nacho/github/agent-evaluation/.venv/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:92: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead
+    if asyncio.iscoroutinefunction(func):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/test_agentic_flows.py::test_weather_agentic_flow[unknown_city_error_recovery]
+FAILED tests/test_agentic_flows.py::test_weather_agentic_flow[service_outage_error_recovery]
+============= 2 failed, 8 passed, 17 warnings in 540.53s (0:09:00) =============

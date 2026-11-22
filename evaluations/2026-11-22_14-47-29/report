@@ -1,0 +1,17 @@
+============================= test session starts ==============================
+platform linux -- Python 3.14.4, pytest-9.2.0, pluggy-1.7.0
+rootdir: /home/nacho/github/agent-evaluation
+configfile: pyproject.toml
+plugins: langsmith-0.15.1, arize-phoenix-client-3.7.0, asyncio-1.5.0, anyio-4.16.0
+asyncio: mode=Mode.STRICT, debug=False, asyncio_default_fixture_loop_scope=function, asyncio_default_test_loop_scope=function
+collecting ... collecting 10 items                                                            collected 10 items                                                             
+
+tests/test_agentic_flows.py ..........                                   [100%]
+
+=============================== warnings summary ===============================
+.venv/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:92: 17 warnings
+  /home/nacho/github/agent-evaluation/.venv/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:92: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead
+    if asyncio.iscoroutinefunction(func):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+================= 10 passed, 17 warnings in 477.20s (0:07:57) ==================

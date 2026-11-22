@@ -1,0 +1,113 @@
+============================= test session starts ==============================
+platform linux -- Python 3.14.4, pytest-9.2.0, pluggy-1.7.0
+rootdir: /home/nacho/github/agent-evaluation
+configfile: pyproject.toml
+plugins: langsmith-0.15.1, arize-phoenix-client-3.7.0, asyncio-1.5.0, anyio-4.16.0
+asyncio: mode=Mode.STRICT, debug=False, asyncio_default_fixture_loop_scope=function, asyncio_default_test_loop_scope=function
+collecting ... collecting 10 items                                                            collected 10 items                                                             
+
+tests/test_agentic_flows.py F....F..F.                                   [100%]
+
+=================================== FAILURES ===================================
+_________ test_weather_agentic_flow[madrid_happy_path_default_celsius] _________
+
+case = {'id': 'madrid_happy_path_default_celsius', 'description': 'Standard weather query defaults to Celsius and calls both weather tools.', 'category': 'happy_path', 'turns': ['What is the weather like in Madrid?'], ...}
+request = <FixtureRequest for <Coroutine test_weather_agentic_flow[madrid_happy_path_default_celsius]>>
+
+    @pytest.mark.live_agent
+    @pytest.mark.asyncio
+    @pytest.mark.parametrize("case", FLOW_CASES, ids=[c["id"] for c in FLOW_CASES])
+    async def test_weather_agentic_flow(case: dict, request: pytest.FixtureRequest) -> None:
+        run_result = await run_flow_case(case)
+    
+        outcomes = run_deterministic_evaluators(run_result, case)
+        if request.config.getoption("--run-judge"):
+            outcomes.extend(run_llm_judge_evaluators(run_result, case))
+    
+        failures = [f"[{o.name}] {o.reason}" for o in outcomes if not o.passed]
+>       assert not failures, (
+            f"Flow '{case['id']}' failed {len(failures)} check(s):\n"
+            + "\n".join(f"  - {f}" for f in failures)
+            + f"\nFinal response: {run_result.final_response!r}"
+            + f"\nDomain tool calls: {[(c.turn_index, c.name, c.args) for c in run_result.domain_tool_calls]}"
+        )
+E       AssertionError: Flow 'madrid_happy_path_default_celsius' failed 4 check(s):
+E           - [trajectory_match] Trajectory mismatch (unordered). Expected [('get_weather', {'city': 'Madrid'}), ('get_temperature', {'city': 'Madrid', 'unit': 'celsius'})], got [('get_weather', {'city': 'Madrid'})]
+E           - [groundedness] Expected one of ['14°C', '14 °C', '14.0°C', '14.0 °C'] in final response.
+E           - [trajectory_quality] The agent failed to report the required temperature in Celsius (14°C) and clear sky. The tool response only mentioned 'clear sky' but no temperature. The agent's answer included extra details (e.g., 'gentle wind speed', 'minimal cloud cover') and a follow-up question, which deviated from the required concise, scannable format focusing on the specific temperature and sky conditions. The temperature was not included in the final response.
+E           - [response_quality] The response includes extra details (humidity, wind speed) not requested, omits the required temperature (14°C), and includes a follow-up question that's not part of the core response. This violates the 'concise' and 'accurate' guidelines.
+E         Final response: 'The weather in Madrid, Spain is currently clear with bright skies. The conditions include 45% humidity and a gentle wind speed of 10.5 km/h. This suggests pleasant outdoor conditions with minimal cloud cover and mild wind. Would you like additional details or forecasts for a specific period?'
+E         Domain tool calls: [(0, 'get_weather', {'city': 'Madrid'})]
+E       assert not ["[trajectory_match] Trajectory mismatch (unordered). Expected [('get_weather', {'city': 'Madrid'}), ('get_temperature...des a follow-up question that's not part of the core response. This violates the 'concise' and 'accurate' guidelines."]
+
+tests/test_agentic_flows.py:30: AssertionError
+_____________ test_weather_agentic_flow[multi_turn_unit_followup] ______________
+
+case = {'id': 'multi_turn_unit_followup', 'description': 'Turn 1 checks Madrid in Celsius; Turn 2 retains Madrid context for ...tegory': 'multi_turn', 'turns': ["What's the weather in Madrid?", 'What is the temperature there in Fahrenheit?'], ...}
+request = <FixtureRequest for <Coroutine test_weather_agentic_flow[multi_turn_unit_followup]>>
+
+    @pytest.mark.live_agent
+    @pytest.mark.asyncio
+    @pytest.mark.parametrize("case", FLOW_CASES, ids=[c["id"] for c in FLOW_CASES])
+    async def test_weather_agentic_flow(case: dict, request: pytest.FixtureRequest) -> None:
+        run_result = await run_flow_case(case)
+    
+        outcomes = run_deterministic_evaluators(run_result, case)
+        if request.config.getoption("--run-judge"):
+            outcomes.extend(run_llm_judge_evaluators(run_result, case))
+    
+        failures = [f"[{o.name}] {o.reason}" for o in outcomes if not o.passed]
+>       assert not failures, (
+            f"Flow '{case['id']}' failed {len(failures)} check(s):\n"
+            + "\n".join(f"  - {f}" for f in failures)
+            + f"\nFinal response: {run_result.final_response!r}"
+            + f"\nDomain tool calls: {[(c.turn_index, c.name, c.args) for c in run_result.domain_tool_calls]}"
+        )
+E       AssertionError: Flow 'multi_turn_unit_followup' failed 1 check(s):
+E           - [tool_policy] Turn 0 missed required tool(s): ['get_temperature'] (called: ['get_weather'])
+E         Final response: 'The temperature in Madrid, Spain is 57.2°F (feels like 55.4°F).'
+E         Domain tool calls: [(0, 'get_weather', {'city': 'Madrid'}), (1, 'get_temperature', {'city': 'Madrid', 'unit': 'fahrenheit'})]
+E       assert not ["[tool_policy] Turn 0 missed required tool(s): ['get_temperature'] (called: ['get_weather'])"]
+
+tests/test_agentic_flows.py:30: AssertionError
+______________ test_weather_agentic_flow[unsupported_unit_kelvin] ______________
+
+case = {'id': 'unsupported_unit_kelvin', 'description': 'Unsupported unit (Kelvin) is handled per SKILL.md without crashing.', 'category': 'edge_case', 'turns': ['What is the temperature in Berlin in Kelvin?'], ...}
+request = <FixtureRequest for <Coroutine test_weather_agentic_flow[unsupported_unit_kelvin]>>
+
+    @pytest.mark.live_agent
+    @pytest.mark.asyncio
+    @pytest.mark.parametrize("case", FLOW_CASES, ids=[c["id"] for c in FLOW_CASES])
+    async def test_weather_agentic_flow(case: dict, request: pytest.FixtureRequest) -> None:
+        run_result = await run_flow_case(case)
+    
+        outcomes = run_deterministic_evaluators(run_result, case)
+        if request.config.getoption("--run-judge"):
+            outcomes.extend(run_llm_judge_evaluators(run_result, case))
+    
+        failures = [f"[{o.name}] {o.reason}" for o in outcomes if not o.passed]
+>       assert not failures, (
+            f"Flow '{case['id']}' failed {len(failures)} check(s):\n"
+            + "\n".join(f"  - {f}" for f in failures)
+            + f"\nFinal response: {run_result.final_response!r}"
+            + f"\nDomain tool calls: {[(c.turn_index, c.name, c.args) for c in run_result.domain_tool_calls]}"
+        )
+E       AssertionError: Flow 'unsupported_unit_kelvin' failed 2 check(s):
+E           - [groundedness] Expected one of ['Celsius', 'Fahrenheit'] in final response.; Found forbidden substring '281.15' in final response.
+E           - [trajectory_quality] The agent failed to address the rubric criteria. The user explicitly asked for Kelvin, but the agent did not explain that Kelvin is not supported. Instead, the agent converted Celsius to Kelvin (8°C → 281.15 K) without acknowledging the unit mismatch. The rubric requires the agent to either explain supported units (Celsius/Fahrenheit) or provide Celsius directly, not to convert to an unsupported unit (Kelvin).
+E         Final response: 'The temperature in Berlin is 8.0°C. To convert this to Kelvin, we add 273.15:\n\n$$\nK = °C + 273.15 = 8.0 + 273.15 = 281.15\\ K\n$$\n\n**Answer:** 281.15 K'
+E         Domain tool calls: [(0, 'get_temperature', {'city': 'Berlin', 'unit': 'celsius'})]
+E       assert not ["[groundedness] Expected one of ['Celsius', 'Fahrenheit'] in final response.; Found forbidden substring '281.15' in f...ain supported units (Celsius/Fahrenheit) or provide Celsius directly, not to convert to an unsupported unit (Kelvin).']
+
+tests/test_agentic_flows.py:30: AssertionError
+=============================== warnings summary ===============================
+.venv/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:92: 17 warnings
+  /home/nacho/github/agent-evaluation/.venv/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:92: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead
+    if asyncio.iscoroutinefunction(func):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/test_agentic_flows.py::test_weather_agentic_flow[madrid_happy_path_default_celsius]
+FAILED tests/test_agentic_flows.py::test_weather_agentic_flow[multi_turn_unit_followup]
+FAILED tests/test_agentic_flows.py::test_weather_agentic_flow[unsupported_unit_kelvin]
+============= 3 failed, 7 passed, 17 warnings in 458.45s (0:07:38) =============

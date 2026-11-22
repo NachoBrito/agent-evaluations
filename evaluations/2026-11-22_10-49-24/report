@@ -1,0 +1,83 @@
+============================= test session starts ==============================
+platform linux -- Python 3.14.4, pytest-9.2.0, pluggy-1.7.0
+rootdir: /home/nacho/github/agent-evaluation
+configfile: pyproject.toml
+plugins: langsmith-0.15.1, arize-phoenix-client-3.7.0, asyncio-1.5.0, anyio-4.16.0
+asyncio: mode=Mode.STRICT, debug=False, asyncio_default_fixture_loop_scope=function, asyncio_default_test_loop_scope=function
+collecting ... collecting 10 items                                                            collected 10 items                                                             
+
+tests/test_agentic_flows.py ....F...F.                                   [100%]
+
+=================================== FAILURES ===================================
+___________ test_weather_agentic_flow[multi_turn_clarification_flow] ___________
+
+case = {'id': 'multi_turn_clarification_flow', 'description': 'Turn 1 asks for city with no tool calls; Turn 2 fetches weather for London.', 'category': 'multi_turn', 'turns': ['Is it raining here?', 'Sorry, I meant London.'], ...}
+request = <FixtureRequest for <Coroutine test_weather_agentic_flow[multi_turn_clarification_flow]>>
+
+    @pytest.mark.live_agent
+    @pytest.mark.asyncio
+    @pytest.mark.parametrize("case", FLOW_CASES, ids=[c["id"] for c in FLOW_CASES])
+    async def test_weather_agentic_flow(case: dict, request: pytest.FixtureRequest) -> None:
+        run_result = await run_flow_case(case)
+    
+        outcomes = run_deterministic_evaluators(run_result, case)
+        if request.config.getoption("--run-judge"):
+            outcomes.extend(run_llm_judge_evaluators(run_result, case))
+    
+        failures = [f"[{o.name}] {o.reason}" for o in outcomes if not o.passed]
+>       assert not failures, (
+            f"Flow '{case['id']}' failed {len(failures)} check(s):\n"
+            + "\n".join(f"  - {f}" for f in failures)
+            + f"\nFinal response: {run_result.final_response!r}"
+            + f"\nDomain tool calls: {[(c.turn_index, c.name, c.args) for c in run_result.domain_tool_calls]}"
+            + f"\nSkill loaded (SKILL.md): {run_result.skill_loaded}"
+        )
+E       AssertionError: Flow 'multi_turn_clarification_flow' failed 1 check(s):
+E           - [response_quality] The assistant failed to follow the Turn 1 rule. On Turn 1, the agent must not call any weather tool and must ask for a city. The response incorrectly called the weather tool immediately and provided a weather report without first asking for the city. The rest of the response is correct, but this initial error makes the overall response invalid.
+E         Final response: 'The weather in London, United Kingdom is **moderate rain** with humidity at 85% and wind speed of 22.0 km/h. The current temperature is **12°C**.'
+E         Domain tool calls: [(1, 'get_weather', {'city': 'London'})]
+E         Skill loaded (SKILL.md): False
+E       assert not ['[response_quality] The assistant failed to follow the Turn 1 rule. On Turn 1, the agent must not call any weather to... asking for the city. The rest of the response is correct, but this initial error makes the overall response invalid.']
+
+tests/test_agentic_flows.py:30: AssertionError
+______________ test_weather_agentic_flow[unsupported_unit_kelvin] ______________
+
+case = {'id': 'unsupported_unit_kelvin', 'description': 'Unsupported unit (Kelvin) is handled per SKILL.md without crashing.', 'category': 'edge_case', 'turns': ['What is the temperature in Berlin in Kelvin?'], ...}
+request = <FixtureRequest for <Coroutine test_weather_agentic_flow[unsupported_unit_kelvin]>>
+
+    @pytest.mark.live_agent
+    @pytest.mark.asyncio
+    @pytest.mark.parametrize("case", FLOW_CASES, ids=[c["id"] for c in FLOW_CASES])
+    async def test_weather_agentic_flow(case: dict, request: pytest.FixtureRequest) -> None:
+        run_result = await run_flow_case(case)
+    
+        outcomes = run_deterministic_evaluators(run_result, case)
+        if request.config.getoption("--run-judge"):
+            outcomes.extend(run_llm_judge_evaluators(run_result, case))
+    
+        failures = [f"[{o.name}] {o.reason}" for o in outcomes if not o.passed]
+>       assert not failures, (
+            f"Flow '{case['id']}' failed {len(failures)} check(s):\n"
+            + "\n".join(f"  - {f}" for f in failures)
+            + f"\nFinal response: {run_result.final_response!r}"
+            + f"\nDomain tool calls: {[(c.turn_index, c.name, c.args) for c in run_result.domain_tool_calls]}"
+            + f"\nSkill loaded (SKILL.md): {run_result.skill_loaded}"
+        )
+E       AssertionError: Flow 'unsupported_unit_kelvin' failed 1 check(s):
+E           - [groundedness] Found forbidden substring '281.15' in final response.
+E         Final response: "The temperature in Berlin is **8.0°C** (celsius). \n\nSince the `get_temperature` function only supports Celsius and Fahrenheit, I cannot directly retrieve the temperature in Kelvin. However, I can calculate it for you using the formula:  \n**Kelvin = Celsius + 273.15**  \n\nSo, **8.0°C = 281.15 K**.  \n\nLet me know if you'd like further clarification!"
+E         Domain tool calls: [(0, 'get_temperature', {'city': 'Berlin', 'unit': 'celsius'})]
+E         Skill loaded (SKILL.md): False
+E       assert not ["[groundedness] Found forbidden substring '281.15' in final response."]
+
+tests/test_agentic_flows.py:30: AssertionError
+=============================== warnings summary ===============================
+.venv/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:92: 17 warnings
+  /home/nacho/github/agent-evaluation/.venv/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:92: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead
+    if asyncio.iscoroutinefunction(func):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/test_agentic_flows.py::test_weather_agentic_flow[multi_turn_clarification_flow]
+FAILED tests/test_agentic_flows.py::test_weather_agentic_flow[unsupported_unit_kelvin]
+============= 2 failed, 8 passed, 17 warnings in 419.59s (0:06:59) =============
