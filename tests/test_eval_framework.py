@@ -258,3 +258,32 @@ def test_detect_skill_loaded():
     ]
     assert detect_skill_loaded(with_skill) is True
     assert detect_skill_loaded(without_skill) is False
+
+
+def test_format_conversation_includes_all_turns():
+    from evals.evaluators.llm_judge import _format_conversation
+
+    run = _make_run(
+        "multi_turn_clarification_flow",
+        [
+            (
+                "Is it raining here?",
+                [
+                    HumanMessage(content="Is it raining here?"),
+                    AIMessage(content="Which city would you like me to check?"),
+                ],
+            ),
+            (
+                "Sorry, I meant London.",
+                [
+                    HumanMessage(content="Sorry, I meant London."),
+                    AIMessage(content="London currently has moderate rain."),
+                ],
+            ),
+        ],
+    )
+    formatted = _format_conversation(run)
+    assert "Turn 1 User: Is it raining here?" in formatted
+    assert "Turn 1 Assistant: Which city would you like me to check?" in formatted
+    assert "Turn 2 User: Sorry, I meant London." in formatted
+    assert "Turn 2 Assistant: London currently has moderate rain." in formatted

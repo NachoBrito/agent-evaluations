@@ -35,13 +35,13 @@ The assistant must follow these style and accuracy guidelines:
 Task Rubric:
 {rubric_criteria}
 
-User Input(s):
-{user_inputs}
+Conversation (all turns):
+{conversation}
 
 Final Assistant Response:
 {final_response}
 
-Does the final response meet these quality guidelines?
+Does the final response (in the context of the conversation above) meet these quality guidelines?
 Respond with 'pass' or 'fail'."""
 
 
@@ -80,6 +80,14 @@ def build_judge_llm(
 
 def _format_trajectory(run: FlowRunResult) -> str:
     return json.dumps(run.openai_trajectory, indent=2, ensure_ascii=False)
+
+
+def _format_conversation(run: FlowRunResult) -> str:
+    lines: list[str] = []
+    for i, turn in enumerate(run.turns, start=1):
+        lines.append(f"Turn {i} User: {turn.user_input}")
+        lines.append(f"Turn {i} Assistant: {turn.final_response}")
+    return "\n".join(lines)
 
 
 def _score_to_outcome(name: str, eval_result: Any) -> EvalOutcome:
@@ -146,9 +154,7 @@ def evaluate_response_quality(
     result = evaluator.evaluate(
         {
             "rubric_criteria": case.get("rubric_criteria", "Follow weather assistant rules."),
-            "user_inputs": "\n".join(
-                f"Turn {i + 1}: {t.user_input}" for i, t in enumerate(run.turns)
-            ),
+            "conversation": _format_conversation(run),
             "final_response": run.final_response,
         }
     )

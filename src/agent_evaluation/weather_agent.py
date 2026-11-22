@@ -91,7 +91,11 @@ def create_weather_agent(
             "For ANY general weather question (such as 'What is the weather like in <city>?' or 'What's the weather in <city>?'), "
             "you MUST call BOTH get_weather AND get_temperature (defaulting to unit='celsius') together before answering, "
             "and report both conditions and temperature in your response. "
-            "Only Celsius and Fahrenheit are supported: never manually convert temperatures to unsupported units like Kelvin. "
+            "NEVER mention, guess, or invent a temperature unless you called get_temperature and received it from the tool; "
+            "if you only called get_weather, report only the conditions it returned. "
+            "Only Celsius and Fahrenheit are supported: if asked for an unsupported unit like Kelvin, do NOT calculate or show "
+            "a Kelvin value or conversion formula, and NEVER mention internal tool or function names like get_temperature — "
+            "simply state that you only support Celsius and Fahrenheit and provide the Celsius temperature (or ask which unit they prefer). "
             "Never offer multi-day or future forecasts."
         ),
     )
