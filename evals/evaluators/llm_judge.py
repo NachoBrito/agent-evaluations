@@ -128,6 +128,14 @@ def evaluate_response_quality(
     judge_llm: LLM | None = None,
 ) -> EvalOutcome:
     """Grade final response tone, formatting, and honesty using an LLM judge."""
+    if not run.final_response.strip():
+        return EvalOutcome(
+            name="response_quality",
+            passed=False,
+            score=0.0,
+            reason="Final agent response is empty.",
+        )
+
     llm = judge_llm or build_judge_llm()
     evaluator = create_classifier(
         name="response_quality",

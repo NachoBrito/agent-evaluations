@@ -1,8 +1,10 @@
 import os
+from typing import Any
 
 from deepagents import create_deep_agent
 from langchain_core.tools import tool
 from langchain_openai import ChatOpenAI
+from langgraph.checkpoint.memory import MemorySaver
 
 from .weather_client import OpenMeteoClient, WeatherClient
 
@@ -54,12 +56,14 @@ def create_weather_agent(
     base_url: str | None = None,
     model: str | None = None,
     api_key: str | None = None,
+    checkpointer: Any | None = None,
 ):
     """Create a weather agent configured by filesystem files."""
     client = weather_client or OpenMeteoClient()
     resolved_base_url = base_url or os.environ.get("LLM_BASE_URL") or DEFAULT_LLM_BASE_URL
     resolved_model = model or os.environ.get("LLM_MODEL") or DEFAULT_LLM_MODEL
     resolved_api_key = api_key or os.environ.get("LLM_API_KEY") or "not_needed"
+    resolved_checkpointer = checkpointer if checkpointer is not None else MemorySaver()
 
     local_llm = ChatOpenAI(
         base_url=resolved_base_url,
@@ -73,6 +77,7 @@ def create_weather_agent(
         memory=["./AGENTS.md"],           # Loaded by MemoryMiddleware
         skills=["./skills/"],             # Loaded by SkillsMiddleware
         tools=create_weather_tools(client),
+        checkpointer=resolved_checkpointer,
         system_prompt=(
             "You are a helpful weather assistant. "
             "Use your tools to look up conditions and temperatures before answering."

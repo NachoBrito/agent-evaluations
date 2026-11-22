@@ -222,3 +222,20 @@ def test_phoenix_llm_judge_instantiation():
         choices={"pass": 1.0, "fail": 0.0},
     )
     assert classifier.name == "trajectory_quality"
+
+
+def test_weather_agent_has_default_checkpointer():
+    from agent_evaluation.weather_agent import create_weather_agent
+
+    agent = create_weather_agent(weather_client=FakeWeatherClient())
+    assert getattr(agent, "checkpointer", None) is not None
+
+
+def test_response_quality_fails_immediately_on_empty_response():
+    from evals.evaluators.llm_judge import evaluate_response_quality
+
+    run = _make_run("empty_case", [("Hello", [HumanMessage(content="Hello"), AIMessage(content="   ")])])
+    outcome = evaluate_response_quality(run, {"rubric_criteria": "Must answer."})
+    assert not outcome.passed
+    assert outcome.score == 0.0
+    assert "empty" in outcome.reason.lower()
