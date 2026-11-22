@@ -122,6 +122,7 @@ cases:
       - turn_index: 0
         required_tools:
           - get_weather
+          - get_temperature
       - turn_index: 1
         required_tools:
           - get_temperature
@@ -152,7 +153,10 @@ cases:
     max_tool_calls: 3
     grounded_any_of:
       - ["Atlantis"]
-      - ["not found", "couldn't find", "could not find", "unable", "sorry", "don't have", "no location"]
+      - ["not found", "couldn't find", "could not find", "unable", "sorry", "don't have", "no location", "does not match", "doesn't match", "non-existent", "does not exist", "doesn't exist", "not a valid", "fictional", "invalid"]
+    forbidden_substrings:
+      - "°C"
+      - "°F"
     rubric_criteria: >
       When the weather tool returns an error that Atlantis could not be found, the agent must
       not loop endlessly or invent weather conditions. It should plainly inform the user that
@@ -186,7 +190,9 @@ cases:
     trajectory_match_mode: superset
     max_tool_calls: 3
     grounded_any_of:
-      - ["Celsius", "Fahrenheit", "celsius", "fahrenheit"]
+      - ["Celsius", "Fahrenheit"]
+    forbidden_substrings:
+      - "281.15"
     rubric_criteria: >
       The agent must recognize that Kelvin is not supported, explain that it supports Celsius
       and Fahrenheit, and either ask which the user prefers or provide the temperature in Celsius (8°C).
