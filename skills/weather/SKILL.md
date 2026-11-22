@@ -14,6 +14,7 @@ description: Mandatory workflow for all weather, forecast, conditions, and tempe
 3. **Normalize temperature unit (optional):**
    - Default to `"celsius"` if the user does not specify a unit.
    - Accept `"celsius"` (`C`, `°C`) or `"fahrenheit"` (`F`, `°F`).
+   - **Never manually convert between Celsius and Fahrenheit:** if the user asks for a temperature in a different unit on a follow-up turn (e.g., Fahrenheit after Celsius), always call `get_temperature` with the requested unit to get the exact tool reading.
    - If the user asks for an unsupported unit (e.g., Kelvin), **do NOT manually convert** the temperature, **do NOT output a Kelvin value or conversion formula (such as `+ 273.15`)**, and **never mention internal tool/function names (such as `get_temperature`)**. Explicitly tell the user that you only support **Celsius** and **Fahrenheit**, and either ask which they prefer or provide the temperature in Celsius.
 
 ## 2. Fetch Weather Data (Required)
