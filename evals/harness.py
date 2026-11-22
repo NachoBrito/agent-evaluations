@@ -54,6 +54,7 @@ class FlowRunResult:
     final_response: str
     total_latency_seconds: float
     fake_client_log: list[dict[str, Any]] = field(default_factory=list)
+    skill_loaded: bool = False
 
 
 def extract_text_content(content: Any) -> str:
@@ -68,6 +69,21 @@ def extract_text_content(content: Any) -> str:
         ]
         return "\n".join(p for p in parts if p).strip()
     return str(content).strip()
+
+
+def detect_skill_loaded(
+    messages: list[Any],
+    skill_fragment: str = "SKILL.md",
+) -> bool:
+    """Return True if any middleware tool call in messages read the target skill file."""
+    target = skill_fragment.lower()
+    for msg in messages:
+        if isinstance(msg, AIMessage) and getattr(msg, "tool_calls", None):
+            for tc in msg.tool_calls:
+                args = tc.get("args") or {}
+                if any(target in str(v).lower() for v in args.values()):
+                    return True
+    return False
 
 
 def extract_domain_tool_calls(
@@ -239,4 +255,5 @@ async def run_flow_case(
         final_response=final_response,
         total_latency_seconds=total_latency,
         fake_client_log=list(fake_client.call_log),
+        skill_loaded=detect_skill_loaded(all_messages),
     )

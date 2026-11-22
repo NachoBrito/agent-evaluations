@@ -32,4 +32,5 @@ async def test_weather_agentic_flow(case: dict, request: pytest.FixtureRequest) 
         + "\n".join(f"  - {f}" for f in failures)
         + f"\nFinal response: {run_result.final_response!r}"
         + f"\nDomain tool calls: {[(c.turn_index, c.name, c.args) for c in run_result.domain_tool_calls]}"
+        + f"\nSkill loaded (SKILL.md): {run_result.skill_loaded}"
     )

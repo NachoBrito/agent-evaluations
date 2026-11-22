@@ -17,7 +17,10 @@ def create_weather_tools(client: WeatherClient):
 
     @tool
     def get_weather(city: str) -> str:
-        """Get the current weather conditions for a city."""
+        """Get the current weather conditions (sky, humidity, wind — NOT temperature) for a city.
+
+        For general weather queries, also call get_temperature.
+        """
         try:
             conditions = client.get_weather(city)
         except (ValueError, RuntimeError) as exc:
@@ -34,7 +37,10 @@ def create_weather_tools(client: WeatherClient):
 
     @tool
     def get_temperature(city: str, unit: str = "celsius") -> str:
-        """Get the temperature for a city in celsius or fahrenheit."""
+        """Get the temperature for a city in 'celsius' or 'fahrenheit' only.
+
+        Only Celsius and Fahrenheit are supported; never manually convert to unsupported units like Kelvin.
+        """
         try:
             reading = client.get_temperature(city, unit=unit)
         except (ValueError, RuntimeError) as exc:
@@ -80,7 +86,11 @@ def create_weather_agent(
         checkpointer=resolved_checkpointer,
         system_prompt=(
             "You are a helpful weather assistant. "
-            "Use your tools to look up conditions and temperatures before answering."
+            "Follow AGENTS.md and the weather skill strictly. "
+            "For any general weather query about a city, always call BOTH get_weather and get_temperature "
+            "(defaulting to 'celsius'). "
+            "Only Celsius and Fahrenheit are supported: never manually convert temperatures to unsupported units like Kelvin. "
+            "Never offer multi-day or future forecasts."
         ),
     )
         

@@ -239,3 +239,22 @@ def test_response_quality_fails_immediately_on_empty_response():
     assert not outcome.passed
     assert outcome.score == 0.0
     assert "empty" in outcome.reason.lower()
+
+
+def test_detect_skill_loaded():
+    from evals.harness import detect_skill_loaded
+
+    with_skill = [
+        AIMessage(
+            content="",
+            tool_calls=[{"name": "read_file", "args": {"path": "./skills/weather/SKILL.md"}, "id": "mw-1"}],
+        ),
+    ]
+    without_skill = [
+        AIMessage(
+            content="",
+            tool_calls=[{"name": "get_weather", "args": {"city": "Madrid"}, "id": "dom-1"}],
+        ),
+    ]
+    assert detect_skill_loaded(with_skill) is True
+    assert detect_skill_loaded(without_skill) is False
