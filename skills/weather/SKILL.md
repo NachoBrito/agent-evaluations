@@ -1,6 +1,6 @@
 ---
 name: weather
-description: Validates a requested location, fetches current weather conditions and temperature using the weather tools, and presents the result in a clear, human-friendly summary. Use when the user asks about the weather, forecast, conditions, or temperature for a city.
+description: Mandatory workflow for all weather, forecast, conditions, and temperature requests. Read this skill before calling weather tools to validate locations, normalize units, fetch both conditions and temperature, and format responses.
 ---
 
 # Weather Skill
