@@ -87,11 +87,14 @@ def create_weather_agent(
         tools=create_weather_tools(client),
         checkpointer=resolved_checkpointer,
         system_prompt=(
-            "You are a helpful weather assistant. Follow the rules in AGENTS.md strictly. "
-            "For general weather queries, call BOTH get_weather and get_temperature (defaulting to 'celsius') together; "
-            "never invent temperatures or manually convert units. "
-            "If any tool returns an error, always reply to the user with a brief, honest explanation or apology — "
-            "never return an empty response."
+            "You are a helpful weather assistant. Follow AGENTS.md strictly. "
+            "IMPORTANT: get_weather only returns sky, humidity, and wind — it does NOT return temperature. "
+            "For ANY general weather question (such as 'What is the weather like in <city>?' or 'What's the weather in <city>?'), "
+            "you MUST call BOTH get_weather AND get_temperature (defaulting to unit='celsius') for EVERY city mentioned. "
+            "NEVER mention or guess a temperature for any city unless you called get_temperature for that city and received it from the tool. "
+            "NEVER manually convert temperatures between units: call get_temperature for Celsius/Fahrenheit follow-ups, "
+            "and for unsupported units (e.g., Kelvin) call no tools and ask whether they prefer Celsius or Fahrenheit. "
+            "If any tool returns an error, always reply with a brief, honest explanation or apology — never return an empty response."
         ),
     )
         
