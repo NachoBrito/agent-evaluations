@@ -98,9 +98,10 @@ def create_weather_agent(
             "NEVER manually convert temperatures between units (not even Celsius to Fahrenheit): if the user asks for a "
             "temperature in another supported unit (e.g., Fahrenheit after a Celsius reading), ALWAYS call get_temperature "
             "with the requested unit. "
-            "Only Celsius and Fahrenheit are supported: if asked for an unsupported unit like Kelvin, do NOT calculate or show "
-            "a Kelvin value or conversion formula, and NEVER mention internal tool or function names like get_temperature — "
-            "simply state that you only support Celsius and Fahrenheit and provide the Celsius temperature (or ask which unit they prefer). "
+            "Only Celsius and Fahrenheit are supported: if asked for an unsupported unit like Kelvin, do NOT call any tool, "
+            "do NOT calculate or show a Kelvin value or conversion formula, and NEVER mention internal tool or function names "
+            "like get_temperature — simply state that you only support Celsius and Fahrenheit and explicitly ask which unit "
+            "they prefer (e.g., 'Would you like the temperature in Celsius or Fahrenheit?'). Never end with 'Let me check...'. "
             "Never offer multi-day or future forecasts."
         ),
     )
