@@ -39,6 +39,8 @@ def create_weather_tools(client: WeatherClient):
     def get_temperature(city: str, unit: str = "celsius") -> str:
         """Get the temperature for a city in 'celsius' or 'fahrenheit' only.
 
+        Always call this tool whenever the user requests a temperature in a different unit
+        (e.g., Fahrenheit after Celsius); never convert units manually.
         Only Celsius and Fahrenheit are supported; never manually convert to unsupported units like Kelvin.
         """
         try:
@@ -93,6 +95,9 @@ def create_weather_agent(
             "and report both conditions and temperature in your response. "
             "NEVER mention, guess, or invent a temperature unless you called get_temperature and received it from the tool; "
             "if you only called get_weather, report only the conditions it returned. "
+            "NEVER manually convert temperatures between units (not even Celsius to Fahrenheit): if the user asks for a "
+            "temperature in another supported unit (e.g., Fahrenheit after a Celsius reading), ALWAYS call get_temperature "
+            "with the requested unit. "
             "Only Celsius and Fahrenheit are supported: if asked for an unsupported unit like Kelvin, do NOT calculate or show "
             "a Kelvin value or conversion formula, and NEVER mention internal tool or function names like get_temperature — "
             "simply state that you only support Celsius and Fahrenheit and provide the Celsius temperature (or ask which unit they prefer). "
