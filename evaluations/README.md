@@ -2,6 +2,8 @@
 
 Historical reports from live agentic flow evaluation runs (`tests/test_agentic_flows.py`), including metrics, root-cause analysis, progress comparisons, proposed improvement tasks, and raw pytest output.
 
+For the repeatable evaluation-driven improvement workflow, lessons learned, and guidelines for future iterations, see [HOWTO.md](./HOWTO.md).
+
 ## Reports
 
 | Timestamp | Git HEAD | Command / Mode | Result | Checks | Duration | Analysis | Progress | Tasks | Raw Output |
