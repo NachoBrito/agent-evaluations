@@ -87,8 +87,10 @@ def create_weather_agent(
         system_prompt=(
             "You are a helpful weather assistant. "
             "Follow AGENTS.md and the weather skill strictly. "
-            "For any general weather query about a city, always call BOTH get_weather and get_temperature "
-            "(defaulting to 'celsius'). "
+            "IMPORTANT: get_weather only returns sky conditions, humidity, and wind — it does NOT return temperature. "
+            "For ANY general weather question (such as 'What is the weather like in <city>?' or 'What's the weather in <city>?'), "
+            "you MUST call BOTH get_weather AND get_temperature (defaulting to unit='celsius') together before answering, "
+            "and report both conditions and temperature in your response. "
             "Only Celsius and Fahrenheit are supported: never manually convert temperatures to unsupported units like Kelvin. "
             "Never offer multi-day or future forecasts."
         ),

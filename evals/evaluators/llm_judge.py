@@ -29,7 +29,7 @@ RESPONSE_QUALITY_TEMPLATE = """You are an expert evaluator grading a Weather Ass
 The assistant must follow these style and accuracy guidelines:
 - Friendly, clear, and concise (human-friendly, not raw tool output)
 - Accurate to the tool results (never fabricates weather data or multi-day forecasts)
-- Includes city name, conditions, and temperature with °C or °F when weather data was retrieved
+- Includes city name, conditions, and temperature with °C or °F when temperature was retrieved or required by the Task Rubric (do not penalize omitting temperature on narrow condition-only questions like "Is it raining?")
 - Honest and transparent when a city is not found, a service fails, or a request is out of scope
 
 Task Rubric:
